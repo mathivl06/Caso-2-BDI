@@ -1,313 +1,179 @@
-- Database engine: PostgreSQL 15 
+- Database engine: MySQL 8 
 - Database name: DynamicBrandsDB
 
-- Context: 
+- Context: Plataforma de e-commerce dinámico impulsado por IA que genera múltiples sitios por país, con branding independiente, productos compartidos y ventas en moneda local.
 
 ---
 
 # Tables:
 
 ## Users
-
-- userId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- fullName: varchar(100) NOT NULL
-- documentId: varchar(20) UNIQUE NOT NULL
-- createdAt: timestamp NOT NULL
+- userId: INT AUTO_INCREMENT (PK)
+- fullName: VARCHAR(100) NOT NULL
+- email: VARCHAR(100) UNIQUE NOT NULL
+- passwordHash: VARCHAR(255) NOT NULL
+- status: VARCHAR(20) NOT NULL
+- createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 ---
 
 ## Roles
-
-- roleId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- name: varchar(50) NOT NULL
+- roleId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(50) UNIQUE NOT NULL
+- description: VARCHAR(150)
+- createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- deleted: BOOLEAN NOT NULL DEFAULT FALSE
 
 ---
 
 ## Permissions
-
-- permissionId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- name: varchar(50) NOT NULL
-
----
-
-## RolePermissions
-
-- rolePermissionId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- roleId: Int NOT NULL (FK)
-- permissionId: Int NOT NULL (FK)
+- permissionId: INT AUTO_INCREMENT (PK)
+- code: VARCHAR(50) UNIQUE NOT NULL
+- description: VARCHAR(150)
+- deleted: BOOLEAN NOT NULL DEFAULT FALSE
 
 ---
 
 ## UserRoles
-
-- userRoleId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- roleId: Int NOT NULL (FK)
-
----
-
-## ContactTypes
-
-- contactTypeId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- name: varchar(20) NOT NULL -- (EMAIL, PHONE, WHATSAPP, EMERGENCY)
+- userId: INT (FK → Users.userId)
+- roleId: INT (FK → Roles.roleId)
+- assignedAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- deleted: BOOLEAN NOT NULL DEFAULT FALSE
+- PRIMARY KEY (userId, roleId)
 
 ---
 
-## Contacts
-
-- contactId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- contactTypeId: Int NOT NULL (FK)
-- value: varchar(100) NOT NULL
-
----
-
-## UserContacts
-
-- userContactId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- contactId: Int NOT NULL (FK)
-- isPrimary: boolean
-
----
-
-## JudicialApiRequests
-
-- requestId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- requestDate: timestamp NOT NULL
-- responseStatus: varchar(20) -- (SUCCESS, ERROR)
-- responseCode: int
-- responseMessage: varchar(255)
-
----
-
-## BiometricValidations
-
-- validationId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- validationDate: timestamp NOT NULL
-- status: boolean
-- ocrConfidence: decimal
-- livenessScore: decimal
-
----
-
-## States
-
-- stateId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- stateName: varchar(20) NOT NULL -- (LIMPIO, CON_ANTECEDENTES)
-
----
-
-## CriminalRecords
-
-- recordId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- stateId: Int NOT NULL (FK)
-- lastChecked: timestamp NOT NULL
-
----
-
-## CriminalRecordHistory
-
-- historyId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- stateId: Int NOT NULL (FK)
-- checkedAt: timestamp NOT NULL
-
----
-
-## Locations
-
-- locationId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- position: GEOGRAPHY(POINT, 4326) NOT NULL
-- recordedAt: timestamp NOT NULL
-
----
-
-## ActionsOfLogs
-
-- actionOfLogId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- actionOfLogName: varchar(50) NOT NULL
-
----
-
-## SystemLogs
-
-- logId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int (FK)
-- actionOfLogId: Int NOT NULL (FK)
-- description: varchar(255)
-- createdAt: timestamp NOT NULL
+## RolePermissions
+- roleId: INT (FK → Roles.roleId)
+- permissionId: INT (FK → Permissions.permissionId)
+- assignedAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- deleted: BOOLEAN NOT NULL DEFAULT FALSE
+- PRIMARY KEY (roleId, permissionId)
 
 ---
 
 ## Countries
-
-- countryId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- countryName: varchar(50) NOT NULL
-
----
-
-## Provinces
-
-- provinceId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- countryId: Int NOT NULL
-- provinceName: varchar(50) NOT NULL
+- countryId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(100) NOT NULL
+- isoCode: VARCHAR(10) UNIQUE NOT NULL
 
 ---
 
-## Cantons
-
-- cantonId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- provinceId: Int NOT NULL (FK)
-- cantonName: varchar(50) NOT NULL
-
----
-
-## Districts
-
-- districtId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- cantonId: Int NOT NULL (FK)
-- districtName: varchar(50) NOT NULL
+## Currencies
+- currencyId: INT AUTO_INCREMENT (PK)
+- code: VARCHAR(10) UNIQUE NOT NULL
+- name: VARCHAR(50)
+- symbol: VARCHAR(10)
 
 ---
 
-## Addresses
-
-- addressId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- districtId: Int NOT NULL (FK)
-- exactDetail: varchar(255) NOT NULL 
-- latitude: decimal
-- longitude: decimal
+## ExchangeRates
+- rateId: INT AUTO_INCREMENT (PK)
+- currencyId: INT (FK → Currencies.currencyId)
+- rateToUSD: DECIMAL(12,6) NOT NULL
+- effectiveDate: DATE NOT NULL
 
 ---
 
-## TypesOfAddresses
-
-- typeOfAddressId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- typeOfAddressName: varchar(20) -- (HOME, WORK, OTHER)
-
----
-
-## UserAddresses
-
-- userAddressId: INT GENERATED ALWAYS AS IDENTITY (PK)
-- userId: Int NOT NULL (FK)
-- addressId: Int NOT NULL (FK)
-- typeOfAddressId: Int NOT NULL (FK)
+## Sites
+- siteId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(100) NOT NULL
+- countryId: INT (FK → Countries.countryId)
+- currencyId: INT (FK → Currencies.currencyId)
+- brandingConfig: JSON NOT NULL
+- status: VARCHAR(20) NOT NULL
+- createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 ---
 
-# Sample Data (Testing)
-
-## Roles
-
-roleId	name
-1	ADMIN
-2	SECURITY_AGENT
-3	USER
+## Brands
+- brandId: INT AUTO_INCREMENT (PK)
+- siteId: INT (FK → Sites.siteId)
+- brandName: VARCHAR(100) NOT NULL
+- marketingMessage: TEXT
+- logoUrl: VARCHAR(255)
 
 ---
 
-## Permissions
-
-permissionId	name
-1	VIEW_USERS
-2	VALIDATE_USER
-3	VIEW_REPORTS
-4	MANAGE_SYSTEM
-
----
-
-## RolePermissions
-
-rolePermissionId	roleId	permissionId
-1	1	1
-2	1	2
-3	1	3
-4	1	4
-5	2	2
-6	2	3
-7	3	1
+## Products
+- productId: INT AUTO_INCREMENT (PK)
+- externalProductId: VARCHAR(50) NOT NULL
+- name: VARCHAR(150) NOT NULL
+- category: VARCHAR(100)
+- baseCostUSD: DECIMAL(12,2) NOT NULL
+- attributes: JSON NOT NULL
+- createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 ---
 
-## UserRoles
-
-userRoleId	userId	roleId
-1	1	ADMIN
-2	2	USER
-3	3	SECURITY_AGENT
-
----
-
-## ContactTypes
-
-contactTypeId	name
-1	EMAIL
-2	PHONE
-3	WHATSAPP
+## ProductPrices
+- priceId: INT AUTO_INCREMENT (PK)
+- productId: INT (FK → Products.productId)
+- siteId: INT (FK → Sites.siteId)
+- priceLocal: DECIMAL(12,2) NOT NULL
+- currencyId: INT (FK → Currencies.currencyId)
+- validFrom: DATE NOT NULL
 
 ---
 
-## Contacts
-
-contactId	contactTypeId	value
-1	1	juan@mail.com
-2	2	88880001
-3	3	88880001
-4	1	ana@mail.com
-5	2	88880002
+## Customers
+- customerId: INT AUTO_INCREMENT (PK)
+- fullName: VARCHAR(100) NOT NULL
+- email: VARCHAR(100)
+- countryId: INT (FK → Countries.countryId)
+- createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 ---
 
-## UserContacts
-
-userContactId	userId	contactId	isPrimary
-1	1	1	true
-2	1	2	false
-3	1	3	false
-4	2	4	true
-5	2	5	false
-
----
-
-## Provinces
-
-provinceId	name
-1	San José
-2	Alajuela
+## Orders
+- orderId: INT AUTO_INCREMENT (PK)
+- siteId: INT (FK → Sites.siteId)
+- customerId: INT (FK → Customers.customerId)
+- orderDate: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- status: VARCHAR(20) NOT NULL
+- currencyId: INT (FK → Currencies.currencyId)
+- subtotal: DECIMAL(14,2)
+- shippingCost: DECIMAL(14,2)
+- taxes: DECIMAL(14,2)
+- total: DECIMAL(14,2)
 
 ---
 
-## Cantons
-
-cantonId	provinceId	name
-1	1	San José
-2	2	San Carlos
-
----
-
-## Districts
-
-districtId	cantonId	name
-1	1	Carmen
-2	2	Quesada
+## OrderItems
+- orderItemId: INT AUTO_INCREMENT (PK)
+- orderId: INT (FK → Orders.orderId)
+- productId: INT (FK → Products.productId)
+- quantity: INT NOT NULL
+- unitPrice: DECIMAL(12,2) NOT NULL
+- subtotal: DECIMAL(14,2) NOT NULL
 
 ---
 
-## Addresses
-
-addressId	districtId	exactDetail	latitude	longitude
-1	1	100m norte del parque central	9.9281	-84.0907
-2	2	Frente al hospital	10.3230	-84.4270
+## Shipments
+- shipmentId: INT AUTO_INCREMENT (PK)
+- orderId: INT (FK → Orders.orderId)
+- courierName: VARCHAR(100)
+- trackingNumber: VARCHAR(100)
+- status: VARCHAR(50)
+- shippedAt: TIMESTAMP
+- deliveredAt: TIMESTAMP
 
 ---
 
-## UserAddresses
+## InventoryRequests
+- requestId: INT AUTO_INCREMENT (PK)
+- productId: INT (FK → Products.productId)
+- siteId: INT (FK → Sites.siteId)
+- quantity: INT NOT NULL
+- requestedAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- status: VARCHAR(20)
 
-userAddressId	userId	addressId	typeOfAddressId
-1	1	1	1
-2	2	2	2
+---
+
+## AuditLog
+- logId: INT AUTO_INCREMENT (PK)
+- entity: VARCHAR(50)
+- entityId: INT
+- action: VARCHAR(50)
+- details: JSON
+- createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
