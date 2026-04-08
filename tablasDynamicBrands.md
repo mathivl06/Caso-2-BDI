@@ -9,7 +9,9 @@
 
 ## Users
 - userId: INT AUTO_INCREMENT (PK)
-- fullName: VARCHAR(100) NOT NULL
+- name: VARCHAR(20) NOT NULL
+- lastName1: VARCHAR(20) NOT NULL
+- lastName2: VARCHAR(20)
 - email: VARCHAR(100) UNIQUE NOT NULL
 - passwordHash: VARCHAR(255) NOT NULL
 - status: VARCHAR(20) NOT NULL
@@ -81,7 +83,7 @@
 - countryId: INT (FK → Countries.countryId)
 - currencyId: INT (FK → Currencies.currencyId)
 - brandingConfig: JSON NOT NULL
-- status: VARCHAR(20) NOT NULL
+- status: VARCHAR(20) NOT NULL -> Verificar este
 - createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 ---
@@ -118,7 +120,9 @@
 
 ## Customers
 - customerId: INT AUTO_INCREMENT (PK)
-- fullName: VARCHAR(100) NOT NULL
+- name: VARCHAR(20) NOT NULL
+- lastName1: VARCHAR(20) NOT NULL
+- lastName2: VARCHAR(20)
 - email: VARCHAR(100)
 - countryId: INT (FK → Countries.countryId)
 - createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -177,3 +181,7 @@
 - action: VARCHAR(50)
 - details: JSON
 - createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+## Hacer:
+- Agregar un catalogo de countries mas extenso (para la entrega de los productos)
+- Pedirle a la IA ejemplos para comprobar redundancia y duplicacion de datos.
