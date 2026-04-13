@@ -1,19 +1,24 @@
-# Database Design - Dynamic Brands 
+# Database Design - Dynamic Brands
 
 - Database engine: MySQL 8
 - Database name: DynamicBrandsDB
+- Context: Esta es una empresa de base tecnológica. Han desarrollado una IA capaz de generar sitios de e-commerce dinámicos. A partir de parámetros (logo, enfoque, país), la IA despliega tiendas virtuales con marcas blancas. Pueden abrir y cerrar "N" sitios en diferentes países de Latam con un solo clic, cada uno con un enfoque de marketing y mensajes distintos para el mismo producto base.
 
 ---
 
+# Tables:
+
 ## Users
 - userId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(20) NOT NULL
-- lastName1: VARCHAR(20) NOT NULL
-- lastName2: VARCHAR(20)
+- name: VARCHAR(50) NOT NULL
+- lastName1: VARCHAR(50) NOT NULL
+- lastName2: VARCHAR(50)
 - email: VARCHAR(100) UNIQUE NOT NULL
 - passwordHash: VARCHAR(255) NOT NULL
 - status: VARCHAR(20) NOT NULL
 - createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- updatedAt: TIMESTAMP
+- deleted: BOOLEAN DEFAULT FALSE
 
 ---
 
@@ -50,25 +55,26 @@
 
 ---
 
-## ExchangeRates 
+## ExchangeRateSources
+- sourceId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(100)
+
+---
+
+## ExchangeRates
 - rateId: INT AUTO_INCREMENT (PK)
 - currencyId: INT (FK → Currencies.currencyId)
 - rateToUSD: DECIMAL(18,6)
 - effectiveDate: DATE
-- validUntil: DATE NULL
-
----
-
-## ExchangeRateSources
-- sourceId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-- description: TEXT
+- validUntil: DATE
+- sourceId: INT (FK → ExchangeRateSources.sourceId)
 
 ---
 
 ## Sites
 - siteId: INT AUTO_INCREMENT (PK)
 - name: VARCHAR(100)
+- url: VARCHAR(255)
 - countryId: INT (FK → Countries.countryId)
 - currencyId: INT (FK → Currencies.currencyId)
 - isActive: BOOLEAN DEFAULT TRUE
@@ -77,34 +83,43 @@
 
 ---
 
-## SiteBrandingConfig
-- configId: INT AUTO_INCREMENT (PK)
-- siteId: INT (FK → Sites.siteId)
-- key: VARCHAR(50)
-- value: VARCHAR(255)
+## ConfigKeys
+- keyId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(50)
+- groupName: VARCHAR(50)
 
 ---
 
-## SiteStatusHistory
-- statusId: INT AUTO_INCREMENT (PK)
+## SiteBrandingConfig
+- configId: INT AUTO_INCREMENT (PK)
 - siteId: INT (FK → Sites.siteId)
-- statusId: INT (FK → SiteStatusCatalog.statusId)
-- changedAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-- reason: TEXT
+- keyId: INT (FK → ConfigKeys.keyId)
+- value: VARCHAR(255)
+- createdAt: TIMESTAMP
+- updatedAt: TIMESTAMP
+- deleted: BOOLEAN
 
 ---
 
 ## SiteStatusCatalog
 - statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
+- code: VARCHAR(20)
 - description: VARCHAR(100)
 
 ---
 
-## Brands
-- brandId: INT AUTO_INCREMENT (PK)
+## SiteStatusHistory
+- historyId: INT AUTO_INCREMENT (PK)
 - siteId: INT (FK → Sites.siteId)
-- brandName: VARCHAR(100)
+- statusId: INT (FK → SiteStatusCatalog.statusId)
+- changedAt: TIMESTAMP
+- reasonCode: VARCHAR(50)
+
+---
+
+## ProductCategories
+- categoryId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(100)
 
 ---
 
@@ -112,20 +127,27 @@
 - productId: INT AUTO_INCREMENT (PK)
 - externalProductId: VARCHAR(50)
 - productName: VARCHAR(150)
-- category: VARCHAR(100)
+- categoryId: INT (FK → ProductCategories.categoryId)
 - baseCostUSD: DECIMAL(14,2)
+
+---
+
+## AttributeKeys
+- keyId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(50)
+- groupName: VARCHAR(50)
 
 ---
 
 ## ProductAttributes
 - attributeId: INT AUTO_INCREMENT (PK)
 - productId: INT (FK → Products.productId)
-- key: VARCHAR(50)
+- keyId: INT (FK → AttributeKeys.keyId)
 - value: VARCHAR(255)
 
 ---
 
-## ProductPrices 
+## ProductPrices
 - priceId: INT AUTO_INCREMENT (PK)
 - productId: INT (FK → Products.productId)
 - siteId: INT (FK → Sites.siteId)
@@ -136,34 +158,34 @@
 
 ---
 
-## GlobalCustomers
-- globalCustomerId: INT AUTO_INCREMENT (PK)
-- fullName: VARCHAR(100)
-- email: VARCHAR(100) UNIQUE
-
----
-
-## CustomerSites
-- customerSiteId: INT AUTO_INCREMENT (PK)
-- globalCustomerId: INT (FK → GlobalCustomers.globalCustomerId)
+## Customers
+- customerId: INT AUTO_INCREMENT (PK)
 - siteId: INT (FK → Sites.siteId)
-
----
-
-## Orders
-- orderId: INT AUTO_INCREMENT (PK)
-- siteId: INT (FK → Sites.siteId)
-- customerSiteId: INT (FK → CustomerSites.customerSiteId)
-- currencyId: INT (FK → Currencies.currencyId)
-- statusId: INT (FK → OrderStatusCatalog.statusId)
-- orderDate: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- userId: INT (FK → Users.userId)
 
 ---
 
 ## OrderStatusCatalog
 - statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
+- code: VARCHAR(20)
 - description: VARCHAR(100)
+
+---
+
+## Orders
+- orderId: INT AUTO_INCREMENT (PK)
+- orderNumber: VARCHAR(50) UNIQUE
+- siteId: INT (FK → Sites.siteId)
+- customerId: INT (FK → Customers.customerId)
+- currencyId: INT (FK → Currencies.currencyId)
+- statusId: INT (FK → OrderStatusCatalog.statusId)
+- subtotalLocal: DECIMAL(14,2)
+- taxesLocal: DECIMAL(14,2)
+- totalLocal: DECIMAL(14,2)
+- subtotalUSD: DECIMAL(14,2)
+- taxesUSD: DECIMAL(14,2)
+- totalUSD: DECIMAL(14,2)
+- createdAt: TIMESTAMP
 
 ---
 
@@ -171,44 +193,86 @@
 - orderItemId: INT AUTO_INCREMENT (PK)
 - orderId: INT (FK → Orders.orderId)
 - productId: INT (FK → Products.productId)
+- currencyId: INT (FK → Currencies.currencyId)
 - quantity: INT
 - unitPrice: DECIMAL(14,2)
 
 ---
 
+## Payments
+- paymentId: INT AUTO_INCREMENT (PK)
+- orderId: INT (FK → Orders.orderId)
+- method: VARCHAR(50)
+- amount: DECIMAL(14,2)
+- currencyId: INT (FK → Currencies.currencyId)
+- status: VARCHAR(20)
+- processedAt: TIMESTAMP
+
+---
+
+## Producers
+- producerId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(100)
+- countryId: INT (FK → Countries.countryId)
+
+---
+
+## PurchaseOrders
+- purchaseOrderId: INT AUTO_INCREMENT (PK)
+- producerId: INT (FK → Producers.producerId)
+- orderDate: DATE
+- status: VARCHAR(20)
+
+---
+
+## PurchaseOrderItems
+- purchaseItemId: INT AUTO_INCREMENT (PK)
+- purchaseOrderId: INT (FK → PurchaseOrders.purchaseOrderId)
+- productId: INT (FK → Products.productId)
+- quantity: DECIMAL(14,4)
+- costUSD: DECIMAL(14,2)
+
+---
+
 ## Lots
 - lotId: INT AUTO_INCREMENT (PK)
-- lotNumber: VARCHAR(50) UNIQUE
-- origin: VARCHAR(100)
+- purchaseOrderId: INT (FK → PurchaseOrders.purchaseOrderId)
 - createdAt: DATE
 
 ---
 
-## RawInventoryBatches
-- rawBatchId: INT AUTO_INCREMENT (PK)
-- productId: INT (FK → Products.productId)
-- storageId: INT (FK → Storages.storageId)
-- lotId: INT (FK → Lots.lotId)
-- initialQuantity: DECIMAL(14,4)
-- currentQuantity: DECIMAL(14,4)
-- expirationDate: DATE
+## InventoryTransactions
+- transactionId: INT AUTO_INCREMENT (PK)
+- batchId: INT
+- batchType: VARCHAR(20)
+- transactionType: VARCHAR(20)
+- quantity: DECIMAL(14,4)
+- referenceId: INT
+- createdAt: TIMESTAMP
 
 ---
 
 ## FinishedInventoryBatches
 - finishedBatchId: INT AUTO_INCREMENT (PK)
-- workOrderId: INT (FK → KittingWorkOrders.workOrderId)
 - productId: INT (FK → Products.productId)
 - lotId: INT (FK → Lots.lotId)
 - quantityProduced: INT
+- statusId: INT
 - createdAt: TIMESTAMP
 
 ---
 
 ## OrderItemBatches
-- OrderItemBatchesId: INT AUTO_INCREMENT (PK)
+- id: INT AUTO_INCREMENT (PK)
 - orderItemId: INT (FK → OrderItems.orderItemId)
 - finishedBatchId: INT (FK → FinishedInventoryBatches.finishedBatchId)
+- assignedAt: TIMESTAMP
+
+---
+
+## StorageTypes
+- typeId: INT AUTO_INCREMENT (PK)
+- name: VARCHAR(50)
 
 ---
 
@@ -216,62 +280,29 @@
 - hubId: INT AUTO_INCREMENT (PK)
 - name: VARCHAR(100)
 - countryId: INT (FK → Countries.countryId)
-- city: VARCHAR(100)
-- isActive: BOOLEAN
+- portName: VARCHAR(100)
 
 ---
 
 ## Storages
 - storageId: INT AUTO_INCREMENT (PK)
 - hubId: INT (FK → Hubs.hubId)
-- name: VARCHAR(50)
-- type: VARCHAR(50)
+- typeId: INT (FK → StorageTypes.typeId)
+- locationCode: VARCHAR(50)
 
 ---
 
-## KittingWorkOrders
-- workOrderId: INT AUTO_INCREMENT (PK)
-- siteId: INT (FK → Sites.siteId)
-- statusId: INT (FK → WorkOrderStatusCatalog.statusId)
-- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
----
-
-## WorkOrderStatusCatalog
+## ShipmentStatusCatalog
 - statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
-- description: VARCHAR(100)
-
----
-
-## KittingMaterialConsumption
-- consumptionId: INT AUTO_INCREMENT (PK)
-- workOrderId: INT (FK → KittingWorkOrders.workOrderId)
-- rawBatchId: INT (FK → RawInventoryBatches.rawBatchId)
-- quantityUsed: DECIMAL(14,4)
+- code: VARCHAR(20)
 
 ---
 
 ## Shipments
 - shipmentId: INT AUTO_INCREMENT (PK)
 - orderId: INT (FK → Orders.orderId)
-- courierId: INT (FK → Couriers.courierId)
 - trackingNumber: VARCHAR(100)
 - statusId: INT (FK → ShipmentStatusCatalog.statusId)
-
----
-
-## Couriers
-- courierId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-- contactInfo: TEXT
-
----
-
-## ShipmentStatusCatalog
-- statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
-- description: VARCHAR(100)
 
 ---
 
@@ -279,65 +310,4 @@
 - restrictionId: INT AUTO_INCREMENT (PK)
 - productId: INT (FK → Products.productId)
 - countryId: INT (FK → Countries.countryId)
-- isRestricted: BOOLEAN
-
----
-
-## ProductRestrictionHistory
-- restrictionHistoryId: INT AUTO_INCREMENT (PK)
-- productId: INT (FK → Products.productId)
-- countryId: INT (FK → Countries.countryId)
-- restrictionStatusId: INT (FK → RestrictionStatusCatalog.statusId)
-- restrictionTypeId: INT (FK → RestrictionTypes.typeId)
-- validFrom: DATE
-- validUntil: DATE
-
----
-
-## RestrictionStatusCatalog
-- restrictionStatusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
-- description: VARCHAR(100)
-
----
-
-## RestrictionTypes
-- typeId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
-- description: VARCHAR(100)
-
----
-
-## InventoryAdjustments
-- adjustmentId: INT AUTO_INCREMENT (PK)
-- batchId: INT (FK → RawInventoryBatches.rawBatchId OR FinishedInventoryBatches.finishedBatchId)
-- adjustmentTypeId: INT (FK → AdjustmentTypeCatalog.typeId)
-- quantityChanged: DECIMAL(14,4)
-- reason: TEXT
-- adjustedAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
----
-
-## AdjustmentTypeCatalog
-- typeId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
-- description: VARCHAR(100)
-
----
-
-## ProcessSteps
-- stepId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-- description: TEXT
-- categoryId: INT (FK → ProcessCategories.categoryId)
-
----
-
-## ProcessCategories
-- categoryId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20) UNIQUE
-- description: VARCHAR(100)
-
-
-## Hacer:
-- Pedirle a la IA ejemplos para comprobar redundancia y duplicacion de datos.
+- reasonCode: VARCHAR(50)
