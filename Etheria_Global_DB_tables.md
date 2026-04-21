@@ -34,23 +34,109 @@
 - countryId (FK)
 
 ## ExchangeRates
+- exchangeRateId (PK)
+- firstCurrencyId (FK)
+- secondCurrencyId (FK)
+- exchangeRate DECIMAL
 
 ## ExchangeRateHistory
+- exchangeRateHistoryId (PK)
+- firstCurrencyId (FK)
+- secondCurrencyId (FK)
+- exchangeRate DECIMAL
+- startDate TIMESTAMP
+- endDate TIMESTAMP
 
-## IntermediariosBancarios
-- intermediarioBancarioId (PK)
+## BankingIntermediaries
+- bankingIntermediaryId (PK)
+- bankingIntermediaryName varchar(50)
+- headquartersAddress (FK)
 
-## CurrenciesPorIntermediario
+## CurrenciesPerBankingIntermediary
+- bankingIntermediaryId (FK) (CK)
+- currencyId (FK) (CK)
 
-## TipoProducto
-- tipoProductoId (PK)
-- nombreTipoProducto varchar(30)
+## ProductTypes
+- productTypeId (PK)
+- productTypeName varchar(30)
 
-## Producto
-- productoId (PK)
-- nombre varchar(40)
-- tipoProductoId (FK)
-- currencyId (FK)
-- precio float
+## Products
+- productId (PK)
+- productName varchar(40)
+- productTypeId (FK)
+- description varchar(255)
+- enabled boolean
 
-##
+## Suppliers
+- supplierId (PK)
+- supplierName varchar(50)
+- addressId (FK)
+- countryId (FK)
+- enabled boolean
+
+## ImportOrders
+- importOrderId (PK)
+- supplierId (FK)
+- orderDate TIMESTAMP
+- arrivalDate TIMESTAMP
+- totalCostUSD DECIMAL
+- status varchar(20)
+
+## ImportOrderDetails
+- importOrderDetailId (PK)
+- importOrderId (FK)
+- productId (FK)
+- quantity INTEGER
+- unitCostUSD DECIMAL
+
+## Batches -- Para transportar en bulk.
+- batchId (PK)
+- productId (FK)
+- importOrderId (FK)
+- arrivalDate TIMESTAMP
+- quantityReceived INTEGER
+- quantityAvailable INTEGER
+- unitCostUSD DECIMAL
+
+## Warehouses
+- warehouseId (PK)
+- warehouseName varchar(50)
+- addressId (FK)
+
+## Inventory
+- inventoryId (PK)
+- batchId (FK)
+- warehouseId (FK)
+- quantity INTEGER
+
+## DispatchOrders
+- dispatchOrderId (PK)
+- dispatchDate TIMESTAMP
+- destinationCountryId (FK)
+- status varchar(20)
+
+## DispatchOrderDetails
+- dispatchOrderDetailId (PK)
+- dispatchOrderId (FK)
+- batchId (FK)
+- quantity INTEGER
+
+## CourierServices
+- courierServiceId (PK)
+- courierName varchar(50)
+- contactInfo varchar(100)
+
+## Shipments
+- shipmentId (PK)
+- dispatchOrderId (FK)
+- courierServiceId (FK)
+- shipmentDate TIMESTAMP
+- deliveryDate TIMESTAMP
+- shippingCostUSD DECIMAL
+
+## Logs
+- logId (PK)
+- procedureName varchar(50)
+- message varchar(255)
+- logDate TIMESTAMP
+- status varchar(20)
