@@ -55,22 +55,6 @@
 
 ---
 
-## ExchangeRateSources
-- sourceId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-
----
-
-## ExchangeRates
-- rateId: INT AUTO_INCREMENT (PK)
-- currencyId: INT (FK → Currencies.currencyId)
-- rateToUSD: DECIMAL(18,6)
-- effectiveDate: DATE
-- validUntil: DATE
-- sourceId: INT (FK → ExchangeRateSources.sourceId)
-
----
-
 ## Sites
 - siteId: INT AUTO_INCREMENT (PK)
 - name: VARCHAR(100)
@@ -208,7 +192,7 @@
 - productId: INT (FK → Products.productId)
 - currencyId: INT (FK → Currencies.currencyId)
 - quantity: INT
-- productName: VARCHAR(150) (Snapshot)
+- productName: VARCHAR(150)
 - unitPrice: DECIMAL(14,2)
 
 ---
