@@ -139,6 +139,19 @@
 - deliveryDate TIMESTAMP
 - shippingCostUSD DECIMAL
 
+## InventoryTransacionType
+- inventoryTransactionTypeId (PK)
+- inventoryTransactionTypeName varchar(20)
+
+## InventoryTransactions
+- transactionId (PK)
+- batchId (FK)
+- warehouseId (FK)
+- quantity INTEGER
+- transactionType (FK)
+- transactionDate TIMESTAMP
+- referenceId INTEGER -- opcional (importOrderId, dispatchOrderId, etc.)
+
 ## Logs
 - logId (PK)
 - procedureName varchar(50)
