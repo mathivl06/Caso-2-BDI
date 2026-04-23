@@ -55,6 +55,7 @@
 
 ## Products
 - productId (PK)
+- externalProductId (FK)
 - productName varchar(40)
 - productTypeId (FK)
 - description varchar(255)
@@ -100,7 +101,6 @@
 - importOrderId (FK)
 - arrivalDate TIMESTAMP
 - quantityReceived INTEGER
-- quantityAvailable INTEGER
 - unitCostUSD DECIMAL
 
 ## Warehouses
@@ -148,7 +148,7 @@
 - batchId (FK)
 - warehouseId (FK)
 - quantity INTEGER
-- transactionType (FK)
+- inventoryTransactionTypeId (FK)
 - transactionDate TIMESTAMP
 - referenceId INTEGER -- opcional (importOrderId, dispatchOrderId, etc.)
 
