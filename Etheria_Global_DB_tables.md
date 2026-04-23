@@ -33,19 +33,12 @@
 - enabled boolean
 - countryId (FK)
 
-## ExchangeRates
-- exchangeRateId (PK)
-- firstCurrencyId (FK)
-- secondCurrencyId (FK)
-- exchangeRate DECIMAL
-
 ## ExchangeRateHistory
 - exchangeRateHistoryId (PK)
 - firstCurrencyId (FK)
 - secondCurrencyId (FK)
 - exchangeRate DECIMAL
-- startDate TIMESTAMP
-- endDate TIMESTAMP
+- effectiveDate TIMESTAMP
 
 ## BankingIntermediaries
 - bankingIntermediaryId (PK)
@@ -74,13 +67,25 @@
 - countryId (FK)
 - enabled boolean
 
+## ImportOrderStatusCatalog
+- statusId (PK)
+- statusName varchar(20)
+
+## DispatchOrderStatusCatalog
+- statusId (PK)
+- statusName varchar(20)
+
+## LogStatusCatalog
+- statusId (PK)
+- statusName varchar(20)
+
 ## ImportOrders
 - importOrderId (PK)
 - supplierId (FK)
 - orderDate TIMESTAMP
 - arrivalDate TIMESTAMP
 - totalCostUSD DECIMAL
-- status varchar(20)
+- importOrderStatusId (FK)
 
 ## ImportOrderDetails
 - importOrderDetailId (PK)
@@ -113,7 +118,7 @@
 - dispatchOrderId (PK)
 - dispatchDate TIMESTAMP
 - destinationCountryId (FK)
-- status varchar(20)
+- dispatchStatusId (FK)
 
 ## DispatchOrderDetails
 - dispatchOrderDetailId (PK)
@@ -139,4 +144,4 @@
 - procedureName varchar(50)
 - message varchar(255)
 - logDate TIMESTAMP
-- status varchar(20)
+- logStatusId (FK)
