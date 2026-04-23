@@ -55,22 +55,6 @@
 
 ---
 
-## ExchangeRateSources
-- sourceId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-
----
-
-## ExchangeRates
-- rateId: INT AUTO_INCREMENT (PK)
-- currencyId: INT (FK → Currencies.currencyId)
-- rateToUSD: DECIMAL(18,6)
-- effectiveDate: DATE
-- validUntil: DATE
-- sourceId: INT (FK → ExchangeRateSources.sourceId)
-
----
-
 ## Sites
 - siteId: INT AUTO_INCREMENT (PK)
 - name: VARCHAR(100)
@@ -80,6 +64,7 @@
 - isActive: BOOLEAN DEFAULT TRUE
 - validFrom: DATE
 - validUntil: DATE
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ---
 
@@ -95,15 +80,15 @@
 - siteId: INT (FK → Sites.siteId)
 - keyId: INT (FK → ConfigKeys.keyId)
 - value: VARCHAR(255)
-- createdAt: TIMESTAMP
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - updatedAt: TIMESTAMP
-- deleted: BOOLEAN
+- deleted: BOOLEAN DEFAULT FALSE
 
 ---
 
 ## SiteStatusCatalog
 - statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20)
+- code: VARCHAR(20) UNIQUE
 - description: VARCHAR(100)
 
 ---
@@ -123,12 +108,20 @@
 
 ---
 
+## Brands
+- brandId: INT AUTO_INCREMENT (PK)
+- siteId: INT (FK → Sites.siteId)
+- brandName: VARCHAR(100)
+
+---
+
 ## Products
 - productId: INT AUTO_INCREMENT (PK)
-- externalProductId: VARCHAR(50)
+- externalProductId: VARCHAR(50) UNIQUE
 - productName: VARCHAR(150)
 - categoryId: INT (FK → ProductCategories.categoryId)
 - baseCostUSD: DECIMAL(14,2)
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ---
 
@@ -155,6 +148,7 @@
 - currencyId: INT (FK → Currencies.currencyId)
 - validFrom: DATE
 - validUntil: DATE
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ---
 
@@ -162,12 +156,13 @@
 - customerId: INT AUTO_INCREMENT (PK)
 - siteId: INT (FK → Sites.siteId)
 - userId: INT (FK → Users.userId)
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ---
 
 ## OrderStatusCatalog
 - statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20)
+- code: VARCHAR(20) UNIQUE
 - description: VARCHAR(100)
 
 ---
@@ -185,7 +180,9 @@
 - subtotalUSD: DECIMAL(14,2)
 - taxesUSD: DECIMAL(14,2)
 - totalUSD: DECIMAL(14,2)
-- createdAt: TIMESTAMP
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- updatedAt: TIMESTAMP
+- deleted: BOOLEAN DEFAULT FALSE
 
 ---
 
@@ -195,7 +192,15 @@
 - productId: INT (FK → Products.productId)
 - currencyId: INT (FK → Currencies.currencyId)
 - quantity: INT
+- productName: VARCHAR(150)
 - unitPrice: DECIMAL(14,2)
+
+---
+
+## PaymentStatusCatalog
+- statusId: INT AUTO_INCREMENT (PK)
+- code: VARCHAR(20) UNIQUE
+- description: VARCHAR(100)
 
 ---
 
@@ -205,96 +210,24 @@
 - method: VARCHAR(50)
 - amount: DECIMAL(14,2)
 - currencyId: INT (FK → Currencies.currencyId)
-- status: VARCHAR(20)
+- statusId: INT (FK → PaymentStatusCatalog.statusId)
 - processedAt: TIMESTAMP
-
----
-
-## Producers
-- producerId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-- countryId: INT (FK → Countries.countryId)
-
----
-
-## PurchaseOrders
-- purchaseOrderId: INT AUTO_INCREMENT (PK)
-- producerId: INT (FK → Producers.producerId)
-- orderDate: DATE
-- status: VARCHAR(20)
-
----
-
-## PurchaseOrderItems
-- purchaseItemId: INT AUTO_INCREMENT (PK)
-- purchaseOrderId: INT (FK → PurchaseOrders.purchaseOrderId)
-- productId: INT (FK → Products.productId)
-- quantity: DECIMAL(14,4)
-- costUSD: DECIMAL(14,2)
-
----
-
-## Lots
-- lotId: INT AUTO_INCREMENT (PK)
-- purchaseOrderId: INT (FK → PurchaseOrders.purchaseOrderId)
-- createdAt: DATE
-
----
-
-## InventoryTransactions
-- transactionId: INT AUTO_INCREMENT (PK)
-- batchId: INT
-- batchType: VARCHAR(20)
-- transactionType: VARCHAR(20)
-- quantity: DECIMAL(14,4)
-- referenceId: INT
-- createdAt: TIMESTAMP
-
----
-
-## FinishedInventoryBatches
-- finishedBatchId: INT AUTO_INCREMENT (PK)
-- productId: INT (FK → Products.productId)
-- lotId: INT (FK → Lots.lotId)
-- quantityProduced: INT
-- statusId: INT
-- createdAt: TIMESTAMP
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ---
 
 ## OrderItemBatches
 - id: INT AUTO_INCREMENT (PK)
 - orderItemId: INT (FK → OrderItems.orderItemId)
-- finishedBatchId: INT (FK → FinishedInventoryBatches.finishedBatchId)
+- externalBatchId: VARCHAR(50)
 - assignedAt: TIMESTAMP
-
----
-
-## StorageTypes
-- typeId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(50)
-
----
-
-## Hubs
-- hubId: INT AUTO_INCREMENT (PK)
-- name: VARCHAR(100)
-- countryId: INT (FK → Countries.countryId)
-- portName: VARCHAR(100)
-
----
-
-## Storages
-- storageId: INT AUTO_INCREMENT (PK)
-- hubId: INT (FK → Hubs.hubId)
-- typeId: INT (FK → StorageTypes.typeId)
-- locationCode: VARCHAR(50)
 
 ---
 
 ## ShipmentStatusCatalog
 - statusId: INT AUTO_INCREMENT (PK)
-- code: VARCHAR(20)
+- code: VARCHAR(20) UNIQUE
+- description: VARCHAR(100)
 
 ---
 
@@ -302,7 +235,16 @@
 - shipmentId: INT AUTO_INCREMENT (PK)
 - orderId: INT (FK → Orders.orderId)
 - trackingNumber: VARCHAR(100)
+- carrier: VARCHAR(100)
 - statusId: INT (FK → ShipmentStatusCatalog.statusId)
+- createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+---
+
+## RestrictionReasonsCatalog
+- reasonId: INT AUTO_INCREMENT (PK)
+- code: VARCHAR(50) UNIQUE
+- description: VARCHAR(100)
 
 ---
 
@@ -310,4 +252,4 @@
 - restrictionId: INT AUTO_INCREMENT (PK)
 - productId: INT (FK → Products.productId)
 - countryId: INT (FK → Countries.countryId)
-- reasonCode: VARCHAR(50)
+- reasonId: INT (FK → RestrictionReasonsCatalog.reasonId)
