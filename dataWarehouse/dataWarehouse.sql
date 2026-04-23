@@ -1,5 +1,4 @@
-CREATE DATABASE "DynamicBrandsDW";
-\c DynamicBrandsDW;
+CREATE DATABASE dynamicbrandsdw;
 
 -- ======================
 -- DIMENSIONS
