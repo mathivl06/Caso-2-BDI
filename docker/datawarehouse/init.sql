@@ -1,0 +1,1 @@
+\i /scripts/dataWarehouse.sql;

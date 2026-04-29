@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: etheria_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: etheria_db
+    ports:
+      - "5432:5432"
+    volumes:
+      volumes:
+      - ./etheriaGlobal:/scripts
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  mysql:
+    image: mysql:8
+    container_name: dynamic_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dynamic_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./dynamicBrands:/scripts
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  datawarehouse:
+    image: postgres:15
+    container_name: dw_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dw_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/datawarehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
