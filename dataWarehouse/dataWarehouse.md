@@ -1,148 +1,132 @@
-# Data Warehouse Design - Dynamic Brands & Etheria
+# Data Warehouse Design - Dynamic Brands + Etheria Global
 
-- Database engine: PostgreSQL
-- Database name: DynamicBrandsDW
+* Database engine: PostgreSQL
 
-- Context:
-Este Data Warehouse integra datos de Dynamic Brands (ventas e-commerce) y Etheria Global (supply chain) para análisis estratégico, incluyendo ventas, inventario, logística y proveedores.
+* Database name: DynamicBrandsDW
+
+* Context: Data Warehouse orientado a análisis estratégico. Contiene datos agregados (no transaccionales) provenientes de Dynamic Brands (ventas) y Etheria Global (costos). La información se maneja a nivel resumido por categoría de producto y periodo de tiempo.
 
 ---
 
 # Tables:
 
-## DimDate
-- dateKey: INT (PK)
-- fullDate: DATE
-- day: INT
-- month: INT
-- year: INT
-- quarter: INT
+## EtheriaSupplyCosts
+
+* productCategory: VARCHAR(100) NOT NULL
+
+* countryOrigin: VARCHAR(50) NOT NULL
+
+* costType: VARCHAR(50) NOT NULL
+
+* monthName: VARCHAR(20) NOT NULL
+
+* year: INT NOT NULL
+
+* weekNumber: INT NOT NULL
+
+* totalCost: DECIMAL(14,2) NOT NULL
+
+* quantityUnits: INT NOT NULL
+
+* createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+* PRIMARY KEY (productCategory, countryOrigin, costType, year, monthName, weekNumber)
 
 ---
 
-## DimProduct
-- productKey: SERIAL (PK)
-- externalProductId: VARCHAR(50)
-- productName: VARCHAR(150)
-- category: VARCHAR(100)
-- productType: VARCHAR(50)
+## DynamicSales
+
+* productCategory: VARCHAR(100) NOT NULL
+
+* brandName: VARCHAR(100) NOT NULL
+
+* siteName: VARCHAR(100) NOT NULL
+
+* countryDestination: VARCHAR(50) NOT NULL
+
+* monthName: VARCHAR(20) NOT NULL
+
+* year: INT NOT NULL
+
+* weekNumber: INT NOT NULL
+
+* totalSales: DECIMAL(14,2) NOT NULL
+
+* totalCost: DECIMAL(14,2) NOT NULL
+
+* totalProfit: DECIMAL(14,2) NOT NULL
+
+* createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+* PRIMARY KEY (productCategory, brandName, siteName, countryDestination, year, monthName, weekNumber)
 
 ---
 
-## DimCustomer
-- customerKey: SERIAL (PK)
-- customerId: INT
-- country: VARCHAR(100)
+# Join Logic:
+
+Las tablas se integran mediante:
+
+* productCategory
+* year
+* monthName
+* weekNumber
 
 ---
 
-## DimSite
-- siteKey: SERIAL (PK)
-- siteId: INT
-- siteName: VARCHAR(100)
-- country: VARCHAR(100)
-- currency: VARCHAR(10)
+# Example Query:
+
+```sql
+SELECT 
+    d.productCategory,
+    d.brandName,
+    d.siteName,
+    d.countryDestination,
+    e.countryOrigin,
+    d.year,
+    d.monthName,
+    d.weekNumber,
+
+    e.totalCost AS supplyCost,
+    d.totalSales,
+    d.totalProfit
+
+FROM DynamicSales d
+LEFT JOIN EtheriaSupplyCosts e
+    ON d.productCategory = e.productCategory
+    AND d.year = e.year
+    AND d.monthName = e.monthName
+    AND d.weekNumber = e.weekNumber;
+```
 
 ---
 
-## DimSupplier
-- supplierKey: SERIAL (PK)
-- supplierId: INT
-- supplierName: VARCHAR(100)
-- country: VARCHAR(100)
+# Required Data From OLTP Systems:
+
+## Etheria Global debe proveer:
+
+* productCategory
+* countryOrigin (desde supplier)
+* costType
+* costos convertidos a moneda base
+* fechas (para monthName, year, weekNumber)
+
+## Dynamic Brands debe proveer:
+
+* productCategory
+* brandName (desde Brands)
+* siteName (desde Sites)
+* countryDestination (desde Sites → Countries)
+* ventas en moneda base
+* costos en moneda base
+* fechas (Orders.createdAt)
 
 ---
 
-## DimWarehouse
-- warehouseKey: SERIAL (PK)
-- warehouseId: INT
-- warehouseName: VARCHAR(100)
-- country: VARCHAR(100)
+# Notes:
+
+* Todas las métricas están en moneda base (no se usa USD en nombres)
+* No hay datos transaccionales, solo agregados
+* Máximo 2 tablas, desnormalizadas
+* El cruce se hace por categoría + tiempo
 
 ---
-
-## DimBatch
-- batchKey: SERIAL (PK)
-- batchId: INT
-- arrivalDate: TIMESTAMP
-
----
-
-## DimPaymentStatus
-- paymentStatusKey: SERIAL (PK)
-- code: VARCHAR(20)
-- description: VARCHAR(100)
-
----
-
-## DimOrderStatus
-- orderStatusKey: SERIAL (PK)
-- code: VARCHAR(20)
-- description: VARCHAR(100)
-
----
-
-# Fact Tables:
-
-## FactSales
-- salesId: SERIAL (PK)
-- orderId: INT
-- orderItemId: INT
-
-- productKey: INT (FK → DimProduct.productKey)
-- customerKey: INT (FK → DimCustomer.customerKey)
-- siteKey: INT (FK → DimSite.siteKey)
-- dateKey: INT (FK → DimDate.dateKey)
-
-- quantity: INT
-- unitPrice: DECIMAL(14,2)
-
-- subtotalLocal: DECIMAL(14,2)
-- subtotalUSD: DECIMAL(14,2)
-- taxesUSD: DECIMAL(14,2)
-- totalUSD: DECIMAL(14,2)
-
-- paymentStatusKey: INT (FK → DimPaymentStatus.paymentStatusKey)
-- orderStatusKey: INT (FK → DimOrderStatus.orderStatusKey)
-
----
-
-## FactInventory
-- inventoryFactId: SERIAL (PK)
-
-- batchKey: INT (FK → DimBatch.batchKey)
-- productKey: INT (FK → DimProduct.productKey)
-- warehouseKey: INT (FK → DimWarehouse.warehouseKey)
-- dateKey: INT (FK → DimDate.dateKey)
-
-- quantityAvailable: INT
-- unitCostUSD: DECIMAL(14,2)
-
----
-
-## FactSupply
-- supplyId: SERIAL (PK)
-
-- supplierKey: INT (FK → DimSupplier.supplierKey)
-- productKey: INT (FK → DimProduct.productKey)
-- dateKey: INT (FK → DimDate.dateKey)
-
-- quantity: INT
-- unitCostUSD: DECIMAL(14,2)
-- totalCostUSD: DECIMAL(14,2)
-
----
-
-## FactShipment
-- shipmentFactId: SERIAL (PK)
-
-- shipmentId: INT
-- orderId: INT
-
-- productKey: INT (FK → DimProduct.productKey)
-- batchKey: INT (FK → DimBatch.batchKey)
-- siteKey: INT (FK → DimSite.siteKey)
-- dateKey: INT (FK → DimDate.dateKey)
-
-- shippingCostUSD: DECIMAL(14,2)
-- deliveryTimeDays: INT
