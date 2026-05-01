@@ -57,7 +57,7 @@
 - countryId INT (FK → Countries.countryId, nullable)
 - createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
-## ExchangeRates (Shared across all DBs)
+## ExchangeRates 
 - exchangeRateId SERIAL (PK)
 - fromCurrencyId INT NOT NULL (FK → Currencies.currencyId)
 - toCurrencyId INT NOT NULL (FK → Currencies.currencyId)
@@ -69,7 +69,7 @@
 - createdBy INT (FK → Users)
 - UNIQUE(fromCurrencyId, toCurrencyId, effectiveDate)
 
-## ExchangeRateHistory (Audit trail for rates)
+## ExchangeRateHistory 
 - historyId SERIAL (PK)
 - exchangeRateId INT NOT NULL (FK → ExchangeRates.exchangeRateId)
 - oldRate DECIMAL(18,6)
@@ -89,9 +89,9 @@
 
 ---
 
-# PERSONS & CONTACTS (UNIFIED PATTERN)
+# PERSONS & CONTACTS 
 
-## Persons (Master table for all people)
+## Persons 
 - personId SERIAL (PK)
 - firstName VARCHAR(50) NOT NULL
 - lastName VARCHAR(50) NOT NULL
@@ -102,12 +102,12 @@
 - updatedAt TIMESTAMP
 - deleted BOOLEAN DEFAULT FALSE
 
-## PersonContactTypes (CATALOG)
+## PersonContactTypes 
 - contactTypeId SERIAL (PK)
 - code VARCHAR(20) UNIQUE NOT NULL (EMAIL/PHONE/WHATSAPP/TELEGRAM)
 - name VARCHAR(50) NOT NULL
 
-## PersonContacts (CONTACT INFO PATTERN)
+## PersonContacts 
 - contactId SERIAL (PK)
 - personId INT NOT NULL (FK → Persons.personId)
 - contactTypeId INT NOT NULL (FK → PersonContactTypes.contactTypeId)
@@ -141,7 +141,7 @@
 - updatedBy INT (FK → Persons, optional)
 - deleted BOOLEAN DEFAULT FALSE
 
-## Suppliers (Now references Persons for contact)
+## Suppliers 
 - supplierId SERIAL (PK)
 - supplierName VARCHAR(100) NOT NULL
 - personContactId INT (FK → PersonContacts.contactId, main contact)
@@ -156,9 +156,9 @@
 
 ---
 
-# INVENTORY MOVEMENTS PATTERN (TRANSACTIONS/MOVEMENTS)
+# INVENTORY MOVEMENTS PATTERN 
 
-## InventoryTransactionTypes (CATALOG)
+## InventoryTransactionTypes 
 - transactionTypeId SERIAL (PK)
 - code VARCHAR(20) UNIQUE NOT NULL (ENT/SAL/AJ/TRF/RCV/SHD)
 - name VARCHAR(50) NOT NULL
@@ -197,7 +197,7 @@
 
 ---
 
-# IMPORTS (MASTER-DETAIL PATTERN)
+# IMPORTS 
 
 ## ImportOrderStatusCatalog
 - statusId SERIAL (PK)
@@ -223,7 +223,7 @@
 - updatedAt TIMESTAMP
 - deleted BOOLEAN DEFAULT FALSE
 
-## ImportOrderDetails (Detail)
+## ImportOrderDetails
 - importOrderDetailId SERIAL (PK)
 - importOrderId INT NOT NULL (FK → ImportOrders.importOrderId)
 - productId INT NOT NULL (FK → Products.productId)
@@ -234,7 +234,7 @@
 - lineTotal DECIMAL(14,2) NOT NULL (quantity * unitCost * rate)
 - status VARCHAR(20) (PENDING/RECEIVED/PARTIAL)
 
-## Batches (Bulk shipments received)
+## Batches
 - batchId SERIAL (PK)
 - batchNumber VARCHAR(50) UNIQUE NOT NULL
 - importOrderId INT NOT NULL (FK → ImportOrders.importOrderId)
@@ -254,7 +254,7 @@
 
 # WAREHOUSES & STORAGE
 
-## WarehouseTypes (CATALOG)
+## WarehouseTypes 
 - warehouseTypeId SERIAL (PK)
 - code VARCHAR(20) UNIQUE NOT NULL (COLD/DRY/CLIMATE/HAZMAT)
 - name VARCHAR(50) NOT NULL
@@ -271,7 +271,7 @@
 - enabled BOOLEAN DEFAULT TRUE
 - deleted BOOLEAN DEFAULT FALSE
 
-## StorageLocations (Where exactly in warehouse)
+## StorageLocations 
 - locationId SERIAL (PK)
 - warehouseId INT NOT NULL (FK → Warehouses.warehouseId)
 - locationCode VARCHAR(50) NOT NULL (RACK-A-001, etc)
@@ -292,7 +292,7 @@
 - name VARCHAR(50) NOT NULL
 - isFinal BOOLEAN DEFAULT FALSE
 
-## DispatchOrders (Master)
+## DispatchOrders 
 - dispatchOrderId SERIAL (PK)
 - dispatchOrderNumber VARCHAR(50) UNIQUE NOT NULL
 - destinationCountryId INT NOT NULL (FK → Countries.countryId)
@@ -306,7 +306,7 @@
 - updatedAt TIMESTAMP
 - deleted BOOLEAN DEFAULT FALSE
 
-## DispatchOrderDetails (Detail)
+## DispatchOrderDetails 
 - dispatchOrderDetailId SERIAL (PK)
 - dispatchOrderId INT NOT NULL (FK → DispatchOrders.dispatchOrderId)
 - batchId INT NOT NULL (FK → Batches.batchId)
@@ -317,7 +317,7 @@
 
 # LOGISTICS & SHIPPING
 
-## CourierServices (With Contact Pattern)
+## CourierServices
 - courierServiceId SERIAL (PK)
 - courierName VARCHAR(100) NOT NULL
 - personContactId INT (FK → PersonContacts.contactId, main contact)
@@ -357,7 +357,7 @@
 
 # PRODUCT RESTRICTIONS & COMPLIANCE
 
-## RestrictionTypes (CATALOG)
+## RestrictionTypes 
 - restrictionTypeId SERIAL (PK)
 - code VARCHAR(20) UNIQUE NOT NULL (BANNED/RESTRICTED/PERMIT_REQUIRED/TARIFF_DUTY)
 - name VARCHAR(50) NOT NULL
@@ -368,7 +368,7 @@
 - code VARCHAR(20) UNIQUE NOT NULL (ACTIVE/EXPIRED/SUSPENDED)
 - name VARCHAR(50) NOT NULL
 
-## ProductRestrictions (CURRENT/HISTORICAL PATTERN)
+## ProductRestrictions 
 - restrictionId SERIAL (PK)
 - productId INT NOT NULL (FK → Products.productId)
 - countryId INT NOT NULL (FK → Countries.countryId)
@@ -384,12 +384,12 @@
 
 # AUDIT & OBSERVABILITY
 
-## LogLevels (CATALOG)
+## LogLevels
 - levelId SERIAL (PK)
 - code VARCHAR(20) UNIQUE NOT NULL (INFO/WARN/ERROR/SECURITY)
 - priority INT
 
-## AppLogs (LOGS PATTERN - Mejorado)
+## AppLogs
 - logId BIGSERIAL (PK)
 - personId INT (FK → Persons.personId, nullable for system events)
 - level VARCHAR(20) NOT NULL CHECK (level IN ('INFO','WARN','ERROR','SECURITY'))

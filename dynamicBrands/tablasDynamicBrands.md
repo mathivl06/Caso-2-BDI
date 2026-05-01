@@ -70,25 +70,41 @@
 ---
 
 ## Currencies
-
 * currencyId: INT AUTO_INCREMENT (PK)
-* code: VARCHAR(3) UNIQUE NOT NULL
+* code: VARCHAR(3) UNIQUE NOT NULL (USD/COP/PEN/etc)
 * symbol: VARCHAR(5) NOT NULL
 * name: VARCHAR(50) NOT NULL
-* enabled: BOOLEAN DEFAULT TRUE
-* createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+* baseCurrency: BOOLEAN DEFAULT FALSE (TRUE only for USD)
+* enabled: BOOLEAN NOT NULL DEFAULT TRUE
+* countryId: INT (FK → Countries.countryId, nullable)
+* createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 ---
 
-## ExchangeRates (SNAPSHOT FROM ETHERIA GLOBAL)
-
+## ExchangeRates 
 * exchangeRateId: INT AUTO_INCREMENT (PK)
-* fromCurrencyId: INT (FK → Currencies.currencyId)
-* toCurrencyId: INT (FK → Currencies.currencyId)
-* rate: DECIMAL(18,6) NOT NULL
+* fromCurrencyId: INT NOT NULL (FK → Currencies.currencyId)
+* toCurrencyId: INT NOT NULL (FK → Currencies.currencyId)
+* rate: DECIMAL(18,6) NOT NULL (e.g., 1 USD = 3450 COP)
 * effectiveDate: DATE NOT NULL
-* source: VARCHAR(50) (EXTERNAL_API / ETHERIA_SYNC)
-* createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+* expiryDate: DATE (NULL = still active)
+* source: VARCHAR(50) (BANCO_CENTRAL/OANDA/MANUAL)
+* createdAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+* createdBy: INT (FK → Users.userId)
+* UNIQUE(fromCurrencyId, toCurrencyId, effectiveDate)
+
+---
+
+## ExchangeRateHistory 
+* historyId: INT AUTO_INCREMENT (PK)
+* exchangeRateId: INT NOT NULL (FK → ExchangeRates.exchangeRateId)
+* oldRate: DECIMAL(18,6)
+* newRate: DECIMAL(18,6) NOT NULL
+* fromCurrencyId: INT NOT NULL (FK → Currencies.currencyId)
+* toCurrencyId: INT NOT NULL (FK → Currencies.currencyId)
+* changedAt: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+* changedBy: INT (FK → Users.userId)
+* reason: VARCHAR(255)
 
 ---
 
