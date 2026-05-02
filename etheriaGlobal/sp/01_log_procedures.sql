@@ -1,12 +1,27 @@
 CREATE OR REPLACE PROCEDURE sp_log_event(
-    p_procedure_name VARCHAR,
-    p_message VARCHAR,
-    p_status_id INT
+    p_person_id INT,
+    p_level VARCHAR,
+    p_module VARCHAR,
+    p_action VARCHAR,
+    p_entity VARCHAR,
+    p_entity_id INT,
+    p_message TEXT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO Logs (procedureName, message, logDate, logStatusId)
-    VALUES (p_procedure_name, p_message, NOW(), p_status_id);
+    INSERT INTO AppLogs (
+        personId, level, module, action, entity, entityId, message, createdAt
+    )
+    VALUES (
+        p_person_id,
+        p_level,
+        p_module,
+        p_action,
+        p_entity,
+        p_entity_id,
+        p_message,
+        CURRENT_TIMESTAMP
+    );
 END;
 $$;

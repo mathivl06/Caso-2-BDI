@@ -1,45 +1,63 @@
-CREATE OR REPLACE PROCEDURE sp_add_inventory(
+CREATE OR REPLACE PROCEDURE sp_inventory_movement(
+    p_transaction_type INT,
     p_batch_id INT,
-    p_warehouse_id INT,
-    p_quantity INT
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    INSERT INTO Inventory (batchId, warehouseId, quantity)
-    VALUES (p_batch_id, p_warehouse_id, p_quantity);
-
-    CALL sp_log_event('sp_add_inventory', 'Inventory added for batch ' || p_batch_id, 1);
-
-EXCEPTION
-    WHEN OTHERS THEN
-        CALL sp_log_event('sp_add_inventory', SQLERRM, 2);
-END;
-$$;
-
-CREATE OR REPLACE PROCEDURE sp_inventory_transaction(
-    p_batch_id INT,
-    p_warehouse_id INT,
-    p_quantity INT,
-    p_type_id INT,
+    p_warehouse_from INT,
+    p_warehouse_to INT,
+    p_quantity DECIMAL,
+    p_product_id INT,
+    p_unit_cost DECIMAL,
+    p_currency_id INT,
+    p_created_by INT,
+    p_reference_type VARCHAR,
     p_reference_id INT
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_transaction_id BIGINT;
 BEGIN
-    INSERT INTO InventoryTransactions (
-        batchId, warehouseId, quantity,
-        inventoryTransactionTypeId, transactionDate, referenceId
+    INSERT INTO InventoryTransactionHeader (
+        transactionTypeId,
+        batchId,
+        warehouseIdFrom,
+        warehouseIdTo,
+        transactionDate,
+        referenceType,
+        referenceId,
+        createdBy
     )
     VALUES (
-        p_batch_id, p_warehouse_id, p_quantity,
-        p_type_id, NOW(), p_reference_id
+        p_transaction_type,
+        p_batch_id,
+        p_warehouse_from,
+        p_warehouse_to,
+        CURRENT_TIMESTAMP,
+        p_reference_type,
+        p_reference_id,
+        p_created_by
+    )
+    RETURNING transactionId INTO v_transaction_id;
+
+    INSERT INTO InventoryTransactionDetail (
+        transactionId,
+        productId,
+        quantity,
+        unitCost,
+        currencyId
+    )
+    VALUES (
+        v_transaction_id,
+        p_product_id,
+        p_quantity,
+        p_unit_cost,
+        p_currency_id
     );
 
-    CALL sp_log_event('sp_inventory_transaction', 'Transaction recorded', 1);
+    CALL sp_log_event(p_created_by, 'INFO', 'INVENTORY', 'MOVEMENT', 'InventoryTransaction', v_transaction_id,
+                     'Inventory movement recorded');
 
 EXCEPTION
     WHEN OTHERS THEN
-        CALL sp_log_event('sp_inventory_transaction', SQLERRM, 2);
+        CALL sp_log_event(p_created_by, 'ERROR', 'INVENTORY', 'MOVEMENT', 'InventoryTransaction', NULL, SQLERRM);
 END;
 $$;
