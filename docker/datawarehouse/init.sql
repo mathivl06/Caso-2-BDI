@@ -1,1 +1,1 @@
-\i /scripts/dataWarehouse.sql;
+\i /scripts/dataWarehouse.sql

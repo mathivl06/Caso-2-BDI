@@ -1,4 +1,2 @@
--- crear tablas
+-- Crear tablas de Dynamic Brands
 SOURCE /scripts/dynamicBrands.sql;
-
--- (si tienen SP, también)

@@ -1,132 +1,145 @@
 # Data Warehouse Design - Dynamic Brands + Etheria Global
 
 * Database engine: PostgreSQL
-
 * Database name: DynamicBrandsDW
-
-* Context: Data Warehouse orientado a análisis estratégico. Contiene datos agregados (no transaccionales) provenientes de Dynamic Brands (ventas) y Etheria Global (costos). La información se maneja a nivel resumido por categoría de producto y periodo de tiempo.
+* Context: Data Warehouse orientado a analisis estrategico. Contiene datos agregados provenientes de Dynamic Brands (ventas) y Etheria Global (costos).
+* El DW no contiene tablas de auditoria, logging, control de ejecucion ni staging. Esas responsabilidades quedan fuera del modelo analitico y se manejan desde el proceso ETL en Python.
 
 ---
 
-# Tables:
+# Tables
 
 ## EtheriaSupplyCosts
 
 * productCategory: VARCHAR(100) NOT NULL
-
 * countryOrigin: VARCHAR(50) NOT NULL
-
 * costType: VARCHAR(50) NOT NULL
-
+* importCost: DECIMAL(14,2) NOT NULL
+* shippingCost: DECIMAL(14,2) NOT NULL
+* importFees: DECIMAL(14,2) NOT NULL
+* totalSupplyCost: DECIMAL(14,2) NOT NULL
 * monthName: VARCHAR(20) NOT NULL
-
 * year: INT NOT NULL
-
 * weekNumber: INT NOT NULL
-
-* totalCost: DECIMAL(14,2) NOT NULL
-
-* quantityUnits: INT NOT NULL
-
-* createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
 * PRIMARY KEY (productCategory, countryOrigin, costType, year, monthName, weekNumber)
-
----
 
 ## DynamicSales
 
 * productCategory: VARCHAR(100) NOT NULL
-
 * brandName: VARCHAR(100) NOT NULL
-
 * siteName: VARCHAR(100) NOT NULL
-
 * countryDestination: VARCHAR(50) NOT NULL
-
-* monthName: VARCHAR(20) NOT NULL
-
-* year: INT NOT NULL
-
-* weekNumber: INT NOT NULL
-
 * totalSales: DECIMAL(14,2) NOT NULL
-
+* productCost: DECIMAL(14,2) NOT NULL
+* supplyCost: DECIMAL(14,2) NOT NULL
 * totalCost: DECIMAL(14,2) NOT NULL
-
 * totalProfit: DECIMAL(14,2) NOT NULL
-
-* createdAt: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
+* monthName: VARCHAR(20) NOT NULL
+* year: INT NOT NULL
+* weekNumber: INT NOT NULL
 * PRIMARY KEY (productCategory, brandName, siteName, countryDestination, year, monthName, weekNumber)
+
+## DashboardProfitability
+
+Tabla centralizada para consumo directo del dashboard gerencial.
+
+* productCategory: VARCHAR(100) NOT NULL
+* brandName: VARCHAR(100) NOT NULL
+* siteName: VARCHAR(100) NOT NULL
+* countryOrigin: VARCHAR(50) NOT NULL
+* countryDestination: VARCHAR(50) NOT NULL
+* totalSales: DECIMAL(14,2) NOT NULL
+* importCost: DECIMAL(14,2) NOT NULL
+* shippingCost: DECIMAL(14,2) NOT NULL
+* importFees: DECIMAL(14,2) NOT NULL
+* productCost: DECIMAL(14,2) NOT NULL
+* totalCost: DECIMAL(14,2) NOT NULL
+* totalProfit: DECIMAL(14,2) NOT NULL
+* profitMargin: DECIMAL(8,4) NOT NULL
+* monthName: VARCHAR(20) NOT NULL
+* year: INT NOT NULL
+* weekNumber: INT NOT NULL
+* PRIMARY KEY (productCategory, brandName, siteName, countryOrigin, countryDestination, year, monthName, weekNumber)
 
 ---
 
-# Join Logic:
+# Integration Logic
 
-Las tablas se integran mediante:
+El ETL carga primero `EtheriaSupplyCosts` y `DynamicSales`, y luego materializa `DashboardProfitability` para evitar joins complejos desde el dashboard.
+
+La integracion base se realiza mediante:
 
 * productCategory
 * year
 * monthName
 * weekNumber
 
+Cuando hay multiples paises de origen para una categoria y periodo, el ETL distribuye ventas y costos por participacion proporcional para que las sumas de `DashboardProfitability` no dupliquen ingresos.
+
 ---
 
-# Example Query:
+# Recommended Dashboard Queries
 
 ```sql
-SELECT 
-    d.productCategory,
-    d.brandName,
-    d.siteName,
-    d.countryDestination,
-    e.countryOrigin,
-    d.year,
-    d.monthName,
-    d.weekNumber,
+-- Rentabilidad por categoria
+SELECT
+    productCategory,
+    SUM(totalSales) AS sales,
+    SUM(totalCost) AS cost,
+    SUM(totalProfit) AS profit,
+    ROUND(SUM(totalProfit) * 100.0 / NULLIF(SUM(totalSales), 0), 2) AS margin_pct
+FROM DashboardProfitability
+GROUP BY productCategory
+ORDER BY profit DESC;
 
-    e.totalCost AS supplyCost,
-    d.totalSales,
-    d.totalProfit
+-- Marca IA mas efectiva
+SELECT
+    brandName,
+    SUM(totalSales) AS sales,
+    SUM(totalProfit) AS profit,
+    ROUND(SUM(totalProfit) * 100.0 / NULLIF(SUM(totalSales), 0), 2) AS margin_pct
+FROM DashboardProfitability
+GROUP BY brandName
+ORDER BY profit DESC;
 
-FROM DynamicSales d
-LEFT JOIN EtheriaSupplyCosts e
-    ON d.productCategory = e.productCategory
-    AND d.year = e.year
-    AND d.monthName = e.monthName
-    AND d.weekNumber = e.weekNumber;
+-- Margen por pais considerando envio y permisos
+SELECT
+    countryDestination,
+    SUM(totalSales) AS sales,
+    SUM(productCost + importCost + shippingCost + importFees) AS cost,
+    SUM(totalProfit) AS profit,
+    ROUND(SUM(totalProfit) * 100.0 / NULLIF(SUM(totalSales), 0), 2) AS margin_pct
+FROM DashboardProfitability
+GROUP BY countryDestination
+ORDER BY margin_pct DESC;
 ```
 
 ---
 
-# Required Data From OLTP Systems:
+# Required Data From OLTP Systems
 
-## Etheria Global debe proveer:
+## Etheria Global debe proveer
 
 * productCategory
 * countryOrigin (desde supplier)
-* costType
-* costos convertidos a moneda base
+* importCost, shippingCost e importFees convertidos a USD
 * fechas (para monthName, year, weekNumber)
 
-## Dynamic Brands debe proveer:
+## Dynamic Brands debe proveer
 
 * productCategory
 * brandName (desde Brands)
 * siteName (desde Sites)
-* countryDestination (desde Sites → Countries)
-* ventas en moneda base
-* costos en moneda base
+* countryDestination (desde Sites -> Countries)
+* ventas convertidas a USD
+* costos de producto convertidos a USD
 * fechas (Orders.createdAt)
 
 ---
 
-# Notes:
+# Notes
 
-* Todas las métricas están en moneda base (no se usa USD en nombres)
-* No hay datos transaccionales, solo agregados
-* Máximo 2 tablas, desnormalizadas
-* El cruce se hace por categoría + tiempo
-
----
+* Todas las metricas monetarias se cargan en USD como moneda base.
+* No hay datos transaccionales, solo agregados.
+* El dashboard debe leer principalmente de `DashboardProfitability`.
+* Si no existe una tabla fuente para permisos/aranceles, el ETL aplica una regla parametrizable por porcentaje sobre el costo de importacion.

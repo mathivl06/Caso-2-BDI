@@ -1,4 +1,4 @@
-CREATE DATABASE DynamicBrandsDB;
+CREATE DATABASE IF NOT EXISTS DynamicBrandsDB;
 USE DynamicBrandsDB;
 
 -- ========================

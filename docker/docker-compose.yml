@@ -1,7 +1,6 @@
 version: '3.9'
 
 services:
-
   postgres:
     image: postgres:15
     container_name: etheria_postgres
@@ -13,9 +12,13 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      volumes:
-      - ./etheriaGlobal:/scripts
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../etheriaGlobal:/scripts:ro
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d etheria_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   mysql:
     image: mysql:8
@@ -23,12 +26,17 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: dynamic_db
+      MYSQL_DATABASE: DynamicBrandsDB
     ports:
       - "3306:3306"
     volumes:
-      - ./dynamicBrands:/scripts
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../dynamicBrands:/scripts:ro
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   datawarehouse:
     image: postgres:15
@@ -37,8 +45,45 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dw_db
+      POSTGRES_DB: DynamicBrandsDW
     ports:
       - "5433:5432"
     volumes:
-      - ./docker/datawarehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../dataWarehouse:/scripts:ro
+      - ./datawarehouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d DynamicBrandsDW"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  etl:
+    build:
+      context: ../etl
+    container_name: dynamic_brands_etl
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      datawarehouse:
+        condition: service_healthy
+    environment:
+      BASE_CURRENCY: USD
+      IMPORT_FEE_RATE: "0.10"
+      ETHERIA_PG_HOST: postgres
+      ETHERIA_PG_PORT: "5432"
+      ETHERIA_PG_DATABASE: etheria_db
+      ETHERIA_PG_USER: postgres
+      ETHERIA_PG_PASSWORD: postgres
+      DYNAMIC_MYSQL_HOST: mysql
+      DYNAMIC_MYSQL_PORT: "3306"
+      DYNAMIC_MYSQL_DATABASE: DynamicBrandsDB
+      DYNAMIC_MYSQL_USER: root
+      DYNAMIC_MYSQL_PASSWORD: root
+      DW_PG_HOST: datawarehouse
+      DW_PG_PORT: "5432"
+      DW_PG_DATABASE: DynamicBrandsDW
+      DW_PG_USER: postgres
+      DW_PG_PASSWORD: postgres
+    restart: "no"
