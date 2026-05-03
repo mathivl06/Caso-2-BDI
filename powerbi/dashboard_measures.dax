@@ -1,0 +1,41 @@
+-- Power BI DAX measures for table: DashboardProfitability
+-- Rename the imported PostgreSQL table to DashboardProfitability before creating these measures.
+
+Total Sales USD =
+SUM(DashboardProfitability[totalSales])
+
+Total Cost USD =
+SUM(DashboardProfitability[totalCost])
+
+Total Profit USD =
+SUM(DashboardProfitability[totalProfit])
+
+Profit Margin % =
+DIVIDE([Total Profit USD], [Total Sales USD])
+
+Import Cost USD =
+SUM(DashboardProfitability[importCost])
+
+Shipping Cost USD =
+SUM(DashboardProfitability[shippingCost])
+
+Import Fees USD =
+SUM(DashboardProfitability[importFees])
+
+Product Cost USD =
+SUM(DashboardProfitability[productCost])
+
+Cost With Shipping And Fees USD =
+[Product Cost USD]
+    + [Import Cost USD]
+    + [Shipping Cost USD]
+    + [Import Fees USD]
+
+Brand Effectiveness =
+DIVIDE([Total Profit USD], [Import Cost USD])
+
+-- Calculated column
+Period =
+FORMAT(DashboardProfitability[year], "0000")
+    & "-W"
+    & FORMAT(DashboardProfitability[weekNumber], "00")

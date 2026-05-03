@@ -19,3 +19,19 @@ docker compose -f docker/docker-compose.yml up --build etl
 ```
 
 El proceso hace `full refresh` de las tablas analiticas y no crea tablas de auditoria, staging, logs ni control dentro del Data Warehouse.
+
+## Dashboard Power BI
+
+La guia para construir el dashboard del Data Warehouse en Power BI esta en:
+
+```text
+powerbi/README.md
+```
+
+Incluye:
+
+* Pasos de conexion a PostgreSQL (`localhost:5433`, base `DynamicBrandsDW`).
+* Consulta Power Query para importar `DashboardProfitability` con nombres y tipos correctos.
+* Medidas DAX para ventas, costos, utilidad, margen y efectividad de marca.
+* Visuales recomendados para responder las preguntas del caso.
+* Consultas SQL de validacion contra `DashboardProfitability`.
