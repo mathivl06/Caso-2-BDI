@@ -1,6 +1,6 @@
 # Caso-2-BDI
 
-Repositorio para el caso #2 del curso Bases de Datos I con el profesor Rodrigo Nunez.
+Repositorio para el caso #2 del curso Bases de Datos I con el profesor Rodrigo Nunez. de los estudiantes: Mathias Viquez Leiva y Sebastián de Jesús Padilla Escalante.
 
 Estudiantes: Sebastian Padilla Escalante y Mathias Viquez Leiva.
 
